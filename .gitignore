@@ -1,6 +1,9 @@
-Database file - Do not share saved data
-farmermarket.db
-# Python temporary files
-__pycache__/
-# Jupyter/VS Code Checkpoints (Optional, but safe to include)
-.ipynb_checkpoints/
+# Database file - Do not share saved data
+    farmermarket.db
+    # Environment and Secret Files
+    .env
+    
+    # Python temporary files
+    __pycache__/
+    # Jupyter/VS Code Checkpoints (Optional, but safe to include)
+    .ipynb_checkpoints/
