@@ -14,26 +14,26 @@ def render_home_page():
     st.session_state  # Ensure session state is accessible
 
     # Header
-    st.title("Welcome to AgroConnect 🌱")
+    st.title("Welcome to AgroConnect")
     st.write(
-        "Your smart agriculture companion: connect with farmers, explore crops, and make data-driven decisions!"
+        "Your smart agriculture companion: connect with farmers, explore crops, and make data-driven decisions."
     )
 
     # Banner Image
     st.image(
         "https://images.unsplash.com/photo-1599759805137-c15e8d7a7a06?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1200",
-        use_column_width=True
+        use_container_width=True
     )
 
     # Value Proposition Cards
     col1, col2, col3 = st.columns(3)
 
     with col1:
-        st.info("📈 **Data-Driven Insights**\nGet real-time crop and market data to make informed decisions.")
+        st.info("**Data-Driven Insights**\nGet real-time crop and market data to make informed decisions.")
     with col2:
-        st.success("🤝 **Connect with Farmers**\nEasily discover and collaborate with local farmers and suppliers.")
+        st.success("**Connect with Farmers**\nEasily discover and collaborate with local farmers and suppliers.")
     with col3:
-        st.warning("🌱 **Sustainable Practices**\nPromote eco-friendly and climate-smart agricultural methods.")
+        st.warning("**Sustainable Practices**\nPromote eco-friendly and climate-smart agricultural methods.")
 
 
 def render_db_check():
