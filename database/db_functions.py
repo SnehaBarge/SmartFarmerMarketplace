@@ -28,6 +28,15 @@ def init_db():
         Contact TEXT,
         Listing_Date TEXT
     )""")
+
+    # Create Farmers Table
+    c.execute("""CREATE TABLE IF NOT EXISTS farmers (
+        name TEXT,
+        location TEXT,
+        farm_size REAL,
+        farm_unit TEXT,
+        contact TEXT
+    )""")
     conn.commit()
     conn.close()
 
@@ -40,6 +49,8 @@ def add_data(table_name, data_tuple):
         sql = "INSERT INTO tools (Farmer, Location, Tool, Rate, Contact, Notes) VALUES (?, ?, ?, ?, ?, ?)"
     elif table_name == "crops":
         sql = "INSERT INTO crops (Farmer, Location, Crop, Quantity, Expected_Price, Contact, Listing_Date) VALUES (?, ?, ?, ?, ?, ?, ?)"
+    elif table_name == "farmers":
+        sql = "INSERT INTO farmers (name, location, farm_size, farm_unit, contact) VALUES (?, ?, ?, ?, ?)"
         
     c.execute(sql, data_tuple)
     conn.commit()
@@ -52,3 +63,13 @@ def get_data(table_name):
     df = pd.read_sql_query(f"SELECT rowid, * FROM {table_name}", conn)
     conn.close()
     return df
+
+def get_farmer_profile(name):
+    """Retrieves a farmer's profile by name."""
+    conn = sqlite3.connect(DB_NAME)
+    conn.row_factory = sqlite3.Row
+    c = conn.cursor()
+    c.execute("SELECT * FROM farmers WHERE name = ?", (name,))
+    profile = c.fetchone()
+    conn.close()
+    return dict(profile) if profile else None

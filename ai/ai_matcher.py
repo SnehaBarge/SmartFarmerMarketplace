@@ -3,17 +3,15 @@
 import os
 import sqlite3
 import pandas as pd
-import google.generativeai as genai
+from google import genai
 
 # --- Initialize Gemini AI Client ---
-client_available = False
+client = None
 try:
-    API_KEY = os.environ['GEMINI_API_KEY']
-    genai.configure(api_key=API_KEY)
-    client_available = True
-except KeyError:
-    client_available = False
-    print("Warning: GEMINI_API_KEY not found. AI suggestions will be unavailable.")
+    # The API key is automatically picked up from the GEMINI_API_KEY environment variable.
+    client = genai.Client()
+except Exception as e:
+    print(f"Warning: Failed to initialize Gemini AI client: {e}. AI suggestions will be unavailable.")
 
 DB_NAME = "farmermarket.db"
 
@@ -25,8 +23,8 @@ def fetch_recent_data():
     """
     conn = sqlite3.connect(DB_NAME)
     try:
-        tools_df = pd.read_sql_query("SELECT * FROM tools ORDER BY id DESC LIMIT 10", conn)
-        crops_df = pd.read_sql_query("SELECT * FROM crops ORDER BY id DESC LIMIT 10", conn)
+        tools_df = pd.read_sql_query("SELECT * FROM tools ORDER BY rowid DESC LIMIT 10", conn)
+        crops_df = pd.read_sql_query("SELECT * FROM crops ORDER BY rowid DESC LIMIT 10", conn)
     except Exception as e:
         print(f"Error fetching data from DB: {e}")
         tools_df = pd.DataFrame()
@@ -47,25 +45,47 @@ def get_recommendations(context: dict):
     
     :param context: Dictionary containing user context or preferences.
     """
-    if not client_available:
-        return "(AI suggestion unavailable: GEMINI_API_KEY is not set.)"
+    if not client:
+        return "(AI suggestion unavailable: Gemini AI client not initialized.)"
 
     # Fetch recent database data
     recent_data = fetch_recent_data()
 
     # Prepare prompt for the AI model
-    prompt = (
-        "You are an AI assistant for an agricultural marketplace. "
-        "Based on the following context and recent database information, provide actionable recommendations:\n\n"
-        f"Context: {context}\n\n"
-        f"Recent Tools: {recent_data['tools'].to_dict(orient='records')}\n"
-        f"Recent Crops: {recent_data['crops'].to_dict(orient='records')}\n\n"
-        "Provide concise and practical suggestions."
-    )
+    prompt = f"""
+As an AI assistant for a farmer's marketplace, your task is to provide actionable recommendations to a farmer based on their recent activity.
+
+**Farmer's Context:**
+- **Name:** {context.get('farmer', 'A farmer')}
+- **Location:** {context.get('location', 'their area')}
+- **Recent Action:** Listed a {context.get('type')} for {'rent' if context.get('type') == 'tool' else 'sale'}.
+- **Item:** {context.get('item')}
+
+**Recent Marketplace Activity:**
+- **Recent Tools Listed:** {recent_data['tools'].to_dict(orient='records')}
+- **Recent Crops Listed:** {recent_data['crops'].to_dict(orient='records')}
+
+**Your Task:**
+Generate 2-3 concise and practical recommendations for the farmer. The recommendations should be directly related to their recent activity and the overall marketplace context.
+
+**Example Recommendations:**
+
+*   **For a farmer who listed a tractor for rent:**
+    *   "Consider also listing your plow and seeder. Farmers who rent tractors often need these implements as well."
+    *   "There is a high demand for wheat in your area. Consider planting wheat in the next season."
+
+*   **For a farmer who listed wheat for sale:**
+    *   "A new harvester was just listed for rent in your area. It could help you with your next harvest."
+    *   "Consider diversifying your crops. Many farmers in your area are also planting corn."
+
+**Recommendations for {context.get('farmer', 'the farmer')}:**
+-
+"""
 
     try:
-        model = genai.GenerativeModel("gemini-1.5-flash")
-        response = model.generate(prompt=prompt)
-        return response.result
+        response = client.models.generate_content(
+            model='gemini-2.5-flash', contents=prompt
+        )
+        return response.text
     except Exception as e:
         return f"(AI suggestion unavailable due to an error: {e})"
